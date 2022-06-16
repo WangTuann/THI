@@ -1,0 +1,268 @@
+DBModel
+
+package Models;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import org.eclipse.jdt.internal.compiler.classfmt.ClassFormatException;
+
+public class DBNongSan {    
+    
+    List<NongSan> list = new ArrayList<>();
+    Connection conn = null;
+    String url = "jdbc:mysql://localhost:3306/nongnghiep";
+    String driver = "com.mysql.cj.jdbc.Driver";
+    String userName = "root";
+    String pwd = "";     
+    
+    public DBNongSan() {
+        try {
+            Class.forName(driver);
+            conn = DriverManager.getConnection(url, userName, pwd);            
+        } catch (Exception e) {
+        }
+    } 
+    
+    public ResultSet getAllNongSan() {
+        ResultSet rs = null;
+        try {
+            Statement stmt = conn.createStatement();
+            rs = stmt.executeQuery("Select * From nongsan");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }  
+        return rs;
+    }
+    
+    public int addNongSan(NongSan ns) {
+        int kq = 0;
+        try {
+            Statement stmt = conn.createStatement();
+            String query = String.format("INSERT INTO nongsan VALUES (NULL, '%s', '%s', '2%f')", ns.tenNongSan, ns.donViTinh, ns.giaTien);
+            kq = stmt.executeUpdate(query);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }  
+        return kq;
+    }
+    
+    public int updateNongSan(NongSan ns) {
+        int kq =0;
+        try {
+            Statement stmt = conn.createStatement();
+            String query = String.format("Update nongsan Set tenNongSan = '%s', donViTinh = '%s', giaTien = '%2f' Where maNongSan = %d", ns.tenNongSan, ns.donViTinh, ns.giaTien, ns.maNongSan);
+            kq = stmt.executeUpdate(query);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }  
+        return kq;
+    }
+    
+    public int deleteNongSan(int maNongSan) {
+        int kq = 0;
+        try {
+            Statement stmt = conn.createStatement();
+            String query = String.format("DELETE FROM nongsan WHERE maNongSan = %d", maNongSan);
+            kq = stmt.executeUpdate(query);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }  
+        return kq;
+    }
+    
+    public NongSan getNongSanByID(int maNongSan) {
+        NongSan kq = null;
+        ResultSet rs = null;
+        try {
+            Statement stmt = conn.createStatement();
+            String query = String.format("Select * FROM nongsan WHERE maNongSan = %d", maNongSan);
+            rs = stmt.executeQuery(query);
+            while (rs.next()) {                
+                 kq = new NongSan(maNongSan, rs.getString(2), rs.getString(3), rs.getDouble(4));  
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }  
+        return kq;
+    }
+}
+
+
+Controller
+
+package Controllers;
+
+import Models.DBNongSan;
+import Models.NongSan;
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet(name = "CNongSan", urlPatterns = {"/CNongSan"})
+public class CNongSan extends HttpServlet {
+
+   
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        try (PrintWriter out = response.getWriter()) {
+            /* TODO output your page here. You may use following sample code. */
+            out.println("<!DOCTYPE html>");
+            out.println("<html>");
+            out.println("<head>");
+            out.println("<title>Servlet CNongSan</title>");
+            out.println("</head>");
+            out.println("<body>");
+            out.println("<h1>Servlet CNongSan at " + request.getContextPath() + "</h1>");
+            out.println("</body>");
+            out.println("</html>");
+        }
+    }
+
+   
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+
+        String maNongSan = request.getParameter("id");
+        DBNongSan dBNongSan = new DBNongSan();
+        int kq = dBNongSan.deleteNongSan(Integer.parseInt(maNongSan));
+        response.sendRedirect("Views/listNongSan.jsp");
+    }
+
+   
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
+
+        String maNongSan = request.getParameter("ma");
+        String tenNongSan = request.getParameter("ten");
+        String donViTinh = request.getParameter("dvt");
+        String giaTien = request.getParameter("gia");
+        DBNongSan dbNongSan = new DBNongSan();
+        NongSan ns;
+        
+        if (maNongSan != null) {
+            ns = new NongSan(Integer.parseInt(maNongSan), tenNongSan, donViTinh, Double.parseDouble(giaTien));
+            int kq = dbNongSan.updateNongSan(ns);
+            response.sendRedirect("Views/listNongSan.jsp");
+        }
+        else {           
+            ns = new NongSan(0, tenNongSan, donViTinh, Double.parseDouble(giaTien));
+            int kq = dbNongSan.addNongSan(ns);               
+            response.sendRedirect("Views/listNongSan.jsp");
+        }                               
+    }
+
+   
+    @Override
+    public String getServletInfo() {
+        return "Short description";
+    }// </editor-fold>
+
+}
+
+
+VIEW
+
+list
+
+
+<%@page import="Models.DBNongSan"%>
+<%@page import="java.sql.*"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <link rel="stylesheet" href="../Style/main.css"/>
+        <title>Danh sách nông sản</title>
+    </head>
+    <body>
+
+        <div class="formDiv">
+            <h2>Thêm nông sản mới</h2>
+            <form method="POST" action="../CNongSan">            
+                <input type="text" required name="ten" placeholder="Nhập tên nông sản" /><br>
+                <input type="text" required name="dvt" placeholder="Nhập đơn vị tính" /><br>
+                <input type="number" required min="0" name="gia" placeholder="Nhập giá tiền" /><br>
+                <input type="submit" name="them" value="Thêm" />
+            </form>       
+        </div>  
+
+        <div>
+            <h2>Danh sách các nông sản</h2>
+            <table border="1">
+                <tr>
+                    <th>Mã nông sản</th>
+                    <th>Tên nông sản</th>
+                    <th>Đơn vị tính</th>
+                    <th>Giá tiền</th>
+                    <th colspan="2">Tùy chọn</th>
+                </tr>            
+                <%
+                    DBNongSan dbNongSan = new DBNongSan();
+                    ResultSet rs = dbNongSan.getAllNongSan();
+                    if (rs != null) {
+                        int count = rs.getMetaData().getColumnCount();
+                        while (rs.next()) {
+                            out.print("<tr>");
+                            for (int i = 1; i <= count; i++) {
+                                out.print("<td>" + rs.getString(i) + "</td>");
+                            }
+                            out.print("<td><a href=\"updateNongSan.jsp?id=" + rs.getString(1) + "\">Cập nhật</a></td>");
+                            out.print("<td><a href=\"../CNongSan?id=" + rs.getString(1) + "\">Xóa</a></td>");
+                            out.print("</tr>");
+                        }
+                    }
+                %>        
+            </table>   
+        </div>               
+    </body>
+</html>
+
+update
+
+<%@page import="Models.NongSan"%>
+<%@page import="Models.DBNongSan"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <link rel="stylesheet" href="../Style/main.css"/>
+        <title>Cập nhật nông sản</title>        
+    </head>
+    <body>
+        <%
+            int maNongSan = Integer.parseInt(request.getParameter("id"));
+            DBNongSan dBNongSan = new DBNongSan();
+            NongSan ns = dBNongSan.getNongSanByID(maNongSan);
+        %>
+        <div class="formDiv">
+            <h2>Cập nhật nông sản</h2>
+            <form method="POST" action="../CNongSan">
+                <input type="text" name="ma" readonly value="<%out.print(ns.getMaNongSan());%>" /><br>
+                <input type="text" name="ten" required placeholder="Nhập tên nông sản" value="<%out.print(ns.getTenNongSan());%>" /><br>
+                <input type="text" name="dvt" required placeholder="Nhập đơn vị tính" value="<%out.print(ns.getDonViTinh());%>" /><br>
+                <input type="number" name="gia" required placeholder="Nhập giá tiền" min="0" value="<%out.print(ns.getGiaTienStr());%>" /><br>
+                <input type="submit" name="update" value="Cập Nhật" />
+            </form>  
+        </div>        
+    </body>
+</html>
+
+
+
+
+

@@ -1,0 +1,238 @@
+SerVerForm
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package ClientServer;
+
+import java.awt.Container;
+import java.awt.HeadlessException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import javax.swing.JFrame;
+import javax.swing.JTextArea;
+
+/**
+ *
+ * @author NguyenKhoa
+ */
+public class Server extends JFrame {            
+
+    JTextArea txtArea;
+    
+    public Server() {
+        super("Server");
+        txtArea = new JTextArea(10, 30);
+        Container con = getContentPane();
+        con.add(txtArea);
+        setSize(400, 300);
+        setVisible(true);
+    }
+    
+    public void StartServer() {
+        ServerSocket server = null;
+        Socket client = null;
+        DataInputStream input;
+        DataOutputStream ouput;
+        String mes;
+        
+        try {
+            server = new ServerSocket(9010);
+            while (true) {                
+                client = server.accept();
+                input = new DataInputStream(client.getInputStream());
+                mes = input.readUTF();
+                txtArea.append(mes);
+                int kq = TinhGiaiThua(mes);
+                ouput = new DataOutputStream(client.getOutputStream());
+                ouput.writeUTF(String.valueOf(kq));
+                client.close();
+            }
+        } catch (Exception e) {
+        }
+    }
+    
+    public int TinhGiaiThua(String n) {
+        int kq = 1;        
+        int num = Integer.parseInt(n);
+        for (int i = 1; i <= num; i++) {
+            kq *= i;
+        }        
+        return kq;
+    }
+    
+    public static void main(String[] args) {
+        Server sv = new Server();
+        sv.StartServer();
+        sv.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }    
+}
+
+
+ClientForm
+
+package ClientServer;
+
+import java.awt.Container;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+
+
+public class Client extends JFrame implements ActionListener {
+    
+    JTextField txtField, txtResult; 
+    JButton btnSend;
+
+    public Client() {
+        super("Client");
+        txtField = new JTextField(20);
+        txtResult = new JTextField(20);
+        Container con = getContentPane();
+        con.setLayout(new FlowLayout());
+        
+        btnSend = new JButton("send");
+        btnSend.addActionListener(this);
+        con.add(txtField);
+        con.add(btnSend);
+        con.add(txtResult);
+        setSize(400, 300);
+        setVisible(true);
+    }       
+            
+    public static void main(String[] args) {
+        Client client = new Client();
+        client.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent evt) {
+        Socket client = null;
+        DataOutputStream output;
+        DataInputStream input;
+        
+        try {
+            client = new Socket(InetAddress.getLocalHost(), 9010);
+            output = new DataOutputStream(client.getOutputStream());
+            output.writeUTF(txtField.getText());
+            
+            input = new DataInputStream(client.getInputStream());
+            String mes = input.readUTF();
+            txtResult.setText(mes);
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }       
+    }
+}
+
+
+
+SerVerConsole
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package ClientServer;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+/**
+ *
+ * @author NguyenKhoa
+ */
+public class ServerConsole {
+    public static void main(String[] args) {
+        ServerSocket server = null;
+        Socket client = null;
+        DataInputStream input;
+        DataOutputStream ouput;
+        String mes;
+        
+        try {
+            server = new ServerSocket(9010);
+            while (true) {                
+                client = server.accept();
+                input = new DataInputStream(client.getInputStream());
+                mes = input.readUTF();
+                System.out.println(mes);
+                int kq = TinhGiaiThua(mes);
+                ouput = new DataOutputStream(client.getOutputStream());
+                ouput.writeUTF(String.valueOf(kq));
+                client.close();
+            }
+        } catch (Exception e) {
+        }
+    }
+    
+    static int TinhGiaiThua(String n) {
+        int kq = 1;        
+        int num = Integer.parseInt(n);
+        for (int i = 1; i <= num; i++) {
+            kq *= i;
+        }        
+        return kq;
+    }
+}
+
+ClientConsole
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package ClientServer;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.Scanner;
+
+/**
+ *
+ * @author NguyenKhoa
+ */
+public class ClientConsole {
+    public static void main(String[] args) {
+        Socket client = null;
+        DataOutputStream output;   
+        DataInputStream input;
+        
+        Scanner sc = new Scanner(System.in);
+        
+        try {
+            while (true) {                
+                System.out.print("Nhap vao chuoi bat ky: ");
+                String mes = sc.nextLine();
+                client = new Socket(InetAddress.getLocalHost(), 9010);
+                output = new DataOutputStream(client.getOutputStream());            
+                output.writeUTF(mes);
+                
+                input = new DataInputStream(client.getInputStream());
+                mes = input.readUTF();
+                System.out.println(mes);
+            }           
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
